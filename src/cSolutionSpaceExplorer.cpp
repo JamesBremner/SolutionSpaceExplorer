@@ -39,14 +39,14 @@ void cSolutionSpaceExplorer::parseObjective()
 {
     pObjective.clear();
     sObjective += " ";
-    sObjective.push_back('\03');      // End of text
+    sObjective.push_back('\03'); // End of text
     vConsts.push_back(std::make_pair("One", 1));
     auto itv = vVariableNames.end();
     auto itc = vConsts.end();
 
     for (auto &token : tokenize(sObjective))
     {
-        if( token.empty() )
+        if (token.empty())
             continue;
         switch (token[0])
         {
@@ -71,7 +71,8 @@ void cSolutionSpaceExplorer::parseObjective()
             auto itvNow = std::find(
                 vVariableNames.begin(), vVariableNames.end(),
                 token);
-            if (itvNow == vVariableNames.end()) {
+            if (itvNow == vVariableNames.end())
+            {
                 // token is not a variable, look for constant
                 itc = std::find_if(
                     vConsts.begin(), vConsts.end(),
@@ -79,7 +80,9 @@ void cSolutionSpaceExplorer::parseObjective()
                     {
                         return c.first == token;
                     });
-            } else {
+            }
+            else
+            {
                 // token is variable
                 itv = itvNow;
             }
@@ -87,4 +90,55 @@ void cSolutionSpaceExplorer::parseObjective()
         break;
         }
     }
+}
+void cSolutionSpaceExplorer::search()
+{
+    objectiveValue = 0;
+    vVarVals.clear();
+    vVarVals.resize(vVariableNames.size(), 0);
+    while (nextTestValues(vVarVals, 1, 1))
+    {
+        double o = calcObjective();
+        if( o > objectiveValue )
+        {
+            objectiveValue = o;
+            vVarOptVals = vVarVals;
+        }
+    }
+}
+double cSolutionSpaceExplorer::calcObjective()
+{
+    double ret = 0;
+    for (int p = 0; p < pObjective.size(); p += 2)
+    {
+        ret +=
+            vConsts[pObjective[p]].second *
+            vVarVals[pObjective[p + 1]];
+    }
+    return ret;
+}
+
+bool cSolutionSpaceExplorer::nextTestValues(
+    std::vector<double> &test,
+    int max,
+    int rez)
+{
+    int k = 0;
+    while (true)
+    {
+        double *p = &test[k];
+        *p += rez;
+        if (*p <= max)
+            break;
+        // cary over
+        *p = 0;
+        k++;
+        if (k == vVariableNames.size())
+        {
+            // search is complete
+            return false;
+        }
+    }
+
+    return true;
 }

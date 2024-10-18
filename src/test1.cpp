@@ -54,6 +54,10 @@ main()
     // parse the input
     ssex.parse();
 
+    ssex.search();
+
+
+
     cGUI gui;
 
     return 0;
