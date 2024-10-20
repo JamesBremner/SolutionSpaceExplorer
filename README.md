@@ -72,3 +72,8 @@ Currently, one algorithm is implemented - and exhaustive seach through the solut
 
     ssex.search();
 ```
+Output is
+```
+Employee assigned to job 2  for total value 100
+```
+
