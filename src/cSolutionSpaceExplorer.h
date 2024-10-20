@@ -15,7 +15,7 @@ public:
     /// @brief add a constant
     /// @param name of constant
     /// @param v value of constant
-    
+
     void consts(
         const std::string &name,
         double v);
@@ -51,13 +51,13 @@ public:
 
     //////// Results /////////////////////////
 
-    double ObjectiveValue() const
+    double objective() const
     {
         return objectiveValue;
     }
     std::vector<double> variableValues() const
     {
-        return vVarVals;
+        return vVarOptVals;
     }
 
 private:

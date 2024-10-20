@@ -37,7 +37,7 @@ main()
     // the solution explorer
     cSolutionSpaceExplorer ssex;
 
-    // variables ( ti find values that optimize objective function )
+    // variables ( to find values that optimize objective function )
     // e1toj1 means employee 1 is assigned to job 1
     ssex.variables( { "e1toj1", "e1toj2"});
 
@@ -58,7 +58,20 @@ main()
     // parse the input
     ssex.parse();
 
+    // find optimum assignment using exhaustive search
     ssex.search();
+
+    // get optimal solution
+    auto ovv = ssex.variableValues();
+    double ov = ssex.objective();
+
+    // display
+    std::cout << "Employee assigned to job ";
+    if( ovv[0] > 0 )
+        std::cout << "1 ";
+    else if( ovv[1] > 0 )
+        std::cout << "2 ";
+    std::cout << " for total value " << ov << "\n";
 
     cGUI gui;
 
