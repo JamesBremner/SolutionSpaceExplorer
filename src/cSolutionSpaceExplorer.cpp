@@ -20,9 +20,16 @@ void cSolutionSpaceExplorer::consts(
     vConsts.push_back(std::make_pair(name, v));
 }
 
+void cSolutionSpaceExplorer::constraint(
+    const std::string &sc)
+{
+    vsConstraint.push_back(sc);
+}
+
 void cSolutionSpaceExplorer::parse()
 {
     parseObjective();
+    parseConstraints();
 }
 
 std::vector<std::string> tokenize(const std::string &line)
@@ -35,19 +42,26 @@ std::vector<std::string> tokenize(const std::string &line)
     return ret;
 }
 
-void cSolutionSpaceExplorer::parseObjective()
+std::vector<int> cSolutionSpaceExplorer::parseProductSum(
+    const std::string &line,
+    std::string &compare,
+    double &value)
 {
-    pObjective.clear();
-    sObjective += " ";
-    sObjective.push_back('\03'); // End of text
-    vConsts.push_back(std::make_pair("One", 1));
+    std::vector<int> ret;
+
+    bool fvalueExpected = false;
     auto itv = vVariableNames.end();
     auto itc = vConsts.end();
 
-    for (auto &token : tokenize(sObjective))
+    for (auto &token : tokenize(line))
     {
         if (token.empty())
             continue;
+        if (fvalueExpected)
+        {
+            value = atof(token.c_str());
+            return ret;
+        }
         switch (token[0])
         {
 
@@ -56,18 +70,22 @@ void cSolutionSpaceExplorer::parseObjective()
 
         case '+':
         case '\03':
-        {
-            int ic = vConsts.size() - 1;
-            if (itc != vConsts.end())
-                ic = itc - vConsts.begin();
-            pObjective.push_back(ic);
-            pObjective.push_back(itv - vVariableNames.begin());
-        }
-        break;
+            ret.push_back(itc - vConsts.begin());
+            ret.push_back(itv - vVariableNames.begin());
+            //itc = vConsts.end();
+            break;
+
+        case '<':
+            ret.push_back(itc - vConsts.begin());
+            ret.push_back(itv - vVariableNames.begin());
+            //itc = vConsts.end();
+            compare = token;
+            fvalueExpected = true;
+            break;
 
         default:
         {
-            itc = vConsts.end();
+            itc = vConsts.end() - 1;
             auto itvNow = std::find(
                 vVariableNames.begin(), vVariableNames.end(),
                 token);
@@ -90,6 +108,43 @@ void cSolutionSpaceExplorer::parseObjective()
         break;
         }
     }
+    return ret;
+}
+
+void cSolutionSpaceExplorer::parseObjective()
+{
+    pObjective.clear();
+    sObjective += " ";
+    sObjective.push_back('\03'); // End of text
+    vConsts.push_back(std::make_pair("One", 1));
+    std::string null;
+    double v;
+    pObjective = parseProductSum(sObjective, null, v);
+}
+
+void cSolutionSpaceExplorer::parseConstraints()
+{
+    pConstraint.clear();
+    sConstraint spc;
+    for (auto &sc : vsConstraint)
+    {
+        sc += " ";
+        sc.push_back('\03');
+        std::string compareToken;
+        spc.vParams = parseProductSum(
+            sc,
+            compareToken,
+            spc.value);
+        if (compareToken == "<")
+            spc.compare = eCompare::lt;
+        else if (compareToken == "<=")
+            spc.compare = eCompare::le;
+        else
+            throw std::runtime_error(
+                "unrecognized compare");
+
+        pConstraint.push_back(spc);
+    }
 }
 void cSolutionSpaceExplorer::search()
 {
@@ -98,8 +153,10 @@ void cSolutionSpaceExplorer::search()
     vVarVals.resize(vVariableNames.size(), 0);
     while (nextTestValues(vVarVals, 1, 1))
     {
+        if (!isFeasible())
+            continue;
         double o = calcObjective();
-        if( o > objectiveValue )
+        if (o > objectiveValue)
         {
             objectiveValue = o;
             vVarOptVals = vVarVals;
@@ -116,6 +173,32 @@ double cSolutionSpaceExplorer::calcObjective()
             vVarVals[pObjective[p + 1]];
     }
     return ret;
+}
+
+bool cSolutionSpaceExplorer::isFeasible()
+{
+    for (auto &C : pConstraint)
+    {
+        double v = 0;
+        for (int p = 0; p < C.vParams.size(); p += 2)
+        {
+            v +=
+                vConsts[C.vParams[p]].second *
+                vVarVals[C.vParams[p + 1]];
+        }
+        switch (C.compare)
+        {
+        case eCompare::le:
+            if ( ! ( v <= C.value) )
+                return false;
+            break;
+        case eCompare::lt:
+            if ( ! (v < C.value))
+                return false;
+            break;
+        }
+    }
+    return true;
 }
 
 bool cSolutionSpaceExplorer::nextTestValues(

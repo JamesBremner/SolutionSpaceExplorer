@@ -51,12 +51,14 @@ main()
         "e1toj1 * e1fj1 + "
         "e1toj2 * e1fj2 "    );
 
+    // employee can only be assigned one job
+    ssex.constraint(
+        "e1toj1 + e1toj2 <= 1"    );
+
     // parse the input
     ssex.parse();
 
     ssex.search();
-
-
 
     cGUI gui;
 
