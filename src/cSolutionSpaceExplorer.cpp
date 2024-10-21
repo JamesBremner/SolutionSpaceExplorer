@@ -86,13 +86,13 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
         case '\03':
             ret.push_back(itc - vConsts.begin());
             ret.push_back(itv - vVariableNames.begin());
-             itc = vConsts.end();
+            itc = vConsts.end();
             break;
 
         case '<':
             ret.push_back(itc - vConsts.begin());
             ret.push_back(itv - vVariableNames.begin());
-             itc = vConsts.end();
+            itc = vConsts.end();
             compare = token;
             fvalueExpected = true;
             break;
@@ -111,6 +111,9 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
                     {
                         return c.first == token;
                     });
+                if (itc == vConsts.end())
+                    throw std::runtime_error(
+                        "unrecognized token " + token);
             }
             else
             {
@@ -165,7 +168,7 @@ void cSolutionSpaceExplorer::variableRanges()
 }
 void cSolutionSpaceExplorer::search()
 {
-   raven::set::cRunWatch aWatcher("cSolutionSpaceExplorer::search");
+    raven::set::cRunWatch aWatcher("cSolutionSpaceExplorer::search");
 
     objectiveValue = 0;
     vVarVals.clear();
@@ -185,7 +188,7 @@ void cSolutionSpaceExplorer::search()
 }
 double cSolutionSpaceExplorer::calcObjective()
 {
-    //raven::set::cRunWatch aWatcher("calcObjective");
+    // raven::set::cRunWatch aWatcher("calcObjective");
     double ret = 0;
     for (int p = 0; p < pObjective.size(); p += 2)
     {
@@ -198,16 +201,16 @@ double cSolutionSpaceExplorer::calcObjective()
 
 bool cSolutionSpaceExplorer::isFeasible()
 {
-    //raven::set::cRunWatch aWatcher("isFeasible");
+    // raven::set::cRunWatch aWatcher("isFeasible");
     for (auto &C : pConstraint)
     {
         double v = 0;
-        int* p = C.vParams.data();
+        int *p = C.vParams.data();
         for (int i = 0; i < C.vParams.size(); i += 2)
         {
             v +=
                 vConsts[*p].second *
-                vVarVals[*(p+1)];
+                vVarVals[*(p + 1)];
             p++;
             p++;
         }
@@ -231,7 +234,7 @@ bool cSolutionSpaceExplorer::nextTestValues(
     int max,
     int rez)
 {
-    //raven::set::cRunWatch aWatcher("nextTestValues");
+    // raven::set::cRunWatch aWatcher("nextTestValues");
     int k = 0;
     while (true)
     {
