@@ -4,6 +4,9 @@
 class cSolutionSpaceExplorer
 {
 public:
+
+    cSolutionSpaceExplorer();
+
     //////// Problem specification ///////////
 
     /// @brief set the variable names
@@ -11,6 +14,12 @@ public:
 
     void variables(
         const std::vector<std::string> &vsv);
+
+    /// @brief set maximum for all variable ranges
+    /// @param max 
+    /// ranges default to [0,1]
+
+    void variableMax( double max );
 
     /// @brief add a constant
     /// @param name of constant
@@ -55,6 +64,11 @@ public:
     {
         return objectiveValue;
     }
+    double optVarValue( const std::string& varName ) const;
+
+    std::vector<std::pair<std::string,double>>
+    optVarNameValue() const;
+
     std::vector<double> variableValues() const
     {
         return vVarOptVals;
@@ -65,6 +79,7 @@ private:
     std::vector<int> pObjective; // parsed Objective function
     std::vector<std::string> vVariableNames;
     std::vector<std::pair<std::string, double>> vConsts;
+    int myVariableMax;
 
     enum class eCompare
     {
@@ -96,6 +111,8 @@ private:
         const std::string &line,
         std::string &compare,
         double& value);
+
+    void variableRanges();
 
     /// @brief Calculate the objective function value
 
