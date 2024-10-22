@@ -191,7 +191,6 @@ void cSolutionSpaceExplorer::search()
         double o = calcObjective();
         if (o > objectiveValue)
         {
-            std::cout << "objval " << o << " ";
             objectiveValue = o;
             vOptVars = vTestVars;
         }

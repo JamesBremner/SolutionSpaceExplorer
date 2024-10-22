@@ -23,6 +23,7 @@ CCflags = -std=c++17 $(OPT) -D_mingw_
 OBJ_test1 = \
 	$(ODIR)/test1.o \
 	$(ODIR)/cSolutionSpaceExplorer.o \
+	$(ODIR)/cRunWatch.o \
 
 OBJ_test2 = \
 	$(ODIR)/test2.o \

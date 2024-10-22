@@ -39,7 +39,7 @@ main()
 
     // variables ( to find values that optimize objective function )
     // e1toj1 means employee 1 is assigned to job 1
-    ssex.variables( { "e1toj1", "e1toj2"});
+    ssex.variables( { "e1toj1", "e1toj2"},1);
 
     // constants
     // e1fj1  the effectivenes of assigning employee 1 to job 1
@@ -62,14 +62,13 @@ main()
     ssex.search();
 
     // get optimal solution
-    auto ovv = ssex.variableValues();
     double ov = ssex.objective();
 
     // display
     std::cout << "Employee assigned to job ";
-    if( ovv[0] > 0 )
+    if( ssex.optVarValue("e1toj1") > 0 )
         std::cout << "1 ";
-    else if( ovv[1] > 0 )
+    else if(  ssex.optVarValue("e1toj2") > 0 )
         std::cout << "2 ";
     std::cout << " for total value " << ov << "\n";
 
