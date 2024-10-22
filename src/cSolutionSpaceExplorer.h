@@ -9,17 +9,13 @@ public:
 
     //////// Problem specification ///////////
 
-    /// @brief set the variable names
+    /// @brief set some variable names
     /// @param vsv vector of variable names
+    /// @param max maximum value of the variables
 
     void variables(
-        const std::vector<std::string> &vsv);
-
-    /// @brief set maximum for all variable ranges
-    /// @param max 
-    /// ranges default to [0,1]
-
-    void variableMax( double max );
+        const std::vector<std::string> &vsv,
+        double max);
 
     /// @brief add a constant
     /// @param name of constant
@@ -69,17 +65,7 @@ public:
     std::vector<std::pair<std::string,double>>
     optVarNameValue() const;
 
-    std::vector<double> variableValues() const
-    {
-        return vVarOptVals;
-    }
-
 private:
-    std::string sObjective;      // string objective function
-    std::vector<int> pObjective; // parsed Objective function
-    std::vector<std::string> vVariableNames;
-    std::vector<std::pair<std::string, double>> vConsts;
-    int myVariableMax;
 
     enum class eCompare
     {
@@ -92,10 +78,29 @@ private:
         eCompare compare;
         double value;
     };
+
+    /// @brief A variable
+
+    struct sVar
+    {
+        std::string myName;
+        double myMax;
+        double myVal;
+
+        sVar( const std::string& name, double max );
+    };
+    std::string sObjective;      // string objective function
+    std::vector<int> pObjective; // parsed Objective function
+    std::vector<sVar> vVars;     // input variables
+    std::vector<std::pair<std::string, double>> vConsts;
+    int myVariableMax;
+
+
     std::vector<std::string> vsConstraint; // constraint string specifiers
     std::vector<sConstraint> pConstraint;
 
-    std::vector<double> vVarVals, vVarOptVals; // variable values
+    std::vector<sVar> vTestVars;    // test variable values
+    std::vector<sVar> vOptVars;     // optimal variable values
     double objectiveValue;
 
     /// @brief Parse the objective function string
@@ -126,7 +131,7 @@ private:
     /// @return true if more to come, false if iteration complete
 
     bool nextTestValues(
-        std::vector<double> &test,
+        std::vector<sVar> &test,
         int max,
         int rez);
 };

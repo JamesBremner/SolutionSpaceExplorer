@@ -4,6 +4,15 @@
 #include "cRunWatch.h"
 #include "cSolutionSpaceExplorer.h"
 
+cSolutionSpaceExplorer::sVar::sVar( 
+    const std::string& name, double max )
+        : myName( name ),
+        myMax( max ),
+        myVal( 0 )
+        {
+
+        }
+
 cSolutionSpaceExplorer::cSolutionSpaceExplorer()
     : myVariableMax(1)
 {
@@ -15,14 +24,11 @@ void cSolutionSpaceExplorer::objective(const std::string &sf)
 }
 
 void cSolutionSpaceExplorer::variables(
-    const std::vector<std::string> &vsv)
+    const std::vector<std::string> &vsv,
+    double max)
 {
-    vVariableNames = vsv;
-}
-
-void cSolutionSpaceExplorer::variableMax(double max)
-{
-    myVariableMax = max;
+    for (auto &name : vsv)
+        vVars.emplace_back(name, max);
 }
 
 void cSolutionSpaceExplorer::consts(
@@ -64,7 +70,7 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
     std::vector<int> ret;
 
     bool fvalueExpected = false;
-    auto itv = vVariableNames.end();
+    auto itv = vVars.end();
     auto itc = vConsts.end();
 
     for (auto &token : tokenize(line))
@@ -85,13 +91,13 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
         case '+':
         case '\03':
             ret.push_back(itc - vConsts.begin());
-            ret.push_back(itv - vVariableNames.begin());
+            ret.push_back(itv - vVars.begin());
             itc = vConsts.end();
             break;
 
         case '<':
             ret.push_back(itc - vConsts.begin());
-            ret.push_back(itv - vVariableNames.begin());
+            ret.push_back(itv - vVars.begin());
             itc = vConsts.end();
             compare = token;
             fvalueExpected = true;
@@ -99,10 +105,13 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
 
         default:
         {
-            auto itvNow = std::find(
-                vVariableNames.begin(), vVariableNames.end(),
-                token);
-            if (itvNow == vVariableNames.end())
+            auto itvNow = std::find_if(
+                vVars.begin(), vVars.end(),
+                [&](const sVar &var)
+                {
+                    return var.myName == token;
+                });
+            if (itvNow == vVars.end())
             {
                 // token is not a variable, look for constant
                 itc = std::find_if(
@@ -171,9 +180,8 @@ void cSolutionSpaceExplorer::search()
     raven::set::cRunWatch aWatcher("cSolutionSpaceExplorer::search");
 
     objectiveValue = 0;
-    vVarVals.clear();
-    vVarVals.resize(vVariableNames.size(), 0);
-    while (nextTestValues(vVarVals, myVariableMax, 1))
+    vTestVars = vVars;
+    while (nextTestValues(vTestVars, myVariableMax, 1))
     {
         if (!isFeasible())
             continue;
@@ -182,7 +190,7 @@ void cSolutionSpaceExplorer::search()
         {
             std::cout << "objval " << o << " ";
             objectiveValue = o;
-            vVarOptVals = vVarVals;
+            vOptVars = vTestVars;
         }
     }
 }
@@ -194,7 +202,7 @@ double cSolutionSpaceExplorer::calcObjective()
     {
         ret +=
             vConsts[pObjective[p]].second *
-            vVarVals[pObjective[p + 1]];
+            vTestVars[pObjective[p + 1]].myVal;
     }
     return ret;
 }
@@ -210,7 +218,7 @@ bool cSolutionSpaceExplorer::isFeasible()
         {
             v +=
                 vConsts[*p].second *
-                vVarVals[*(p + 1)];
+                vTestVars[*(p + 1)].myVal;
             p++;
             p++;
         }
@@ -230,7 +238,7 @@ bool cSolutionSpaceExplorer::isFeasible()
 }
 
 bool cSolutionSpaceExplorer::nextTestValues(
-    std::vector<double> &test,
+    std::vector<sVar> &test,
     int max,
     int rez)
 {
@@ -238,14 +246,14 @@ bool cSolutionSpaceExplorer::nextTestValues(
     int k = 0;
     while (true)
     {
-        double *p = &test[k];
+        double *p = &test[k].myVal;
         *p += rez;
-        if (*p <= max)
+        if (*p <= test[k].myMax)
             break;
         // cary over
         *p = 0;
         k++;
-        if (k == vVariableNames.size())
+        if (k == vVars.size())
         {
             // search is complete
             return false;
@@ -258,25 +266,29 @@ bool cSolutionSpaceExplorer::nextTestValues(
 double cSolutionSpaceExplorer::optVarValue(
     const std::string &varName) const
 {
-    auto it = std::find(
-        vVariableNames.begin(), vVariableNames.end(), varName);
-    if (it == vVariableNames.end())
+    auto it = std::find_if(
+        vOptVars.begin(), vOptVars.end(),
+        [&](const sVar &var)
+        {
+            return varName == var.myName;
+        });
+    if (it == vVars.end())
     {
         std::cout << "Cannot find var " << varName << "\n";
         return 0;
     }
-    return vVarOptVals[it - vVariableNames.begin()];
+    return it->myVal;
 }
 
 std::vector<std::pair<std::string, double>>
 cSolutionSpaceExplorer::optVarNameValue() const
 {
     std::vector<std::pair<std::string, double>> ret;
-    for (auto &name : vVariableNames)
+    for (auto &var : vOptVars)
     {
         ret.push_back(std::make_pair(
-            name,
-            optVarValue(name)));
+            var.myName,
+            var.myVal));
     }
     return ret;
 }
