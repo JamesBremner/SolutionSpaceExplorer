@@ -67,6 +67,19 @@ public:
 
 private:
 
+    /// A pair of a vector variable indices ( first )
+    /// and a vector of constant indices ( second )
+    /// the are to be all multiplied together
+    /// to form part of a product sum
+
+    typedef std::pair<std::vector<int>,std::vector<int>> product_t;
+
+    /// A vector of products to be summed
+
+    typedef std::vector<product_t> productSum_t;
+
+    /// A constraint
+
     enum class eCompare
     {
         lt,
@@ -74,34 +87,35 @@ private:
     };
     struct sConstraint
     {
-        std::vector<int> vParams;
-        eCompare compare;
-        double value;
+        productSum_t vParams;   // product sum
+        eCompare compare;       // comparison operator
+        double value;           // value to be compared to the product sum
     };
 
     /// @brief A variable
 
     struct sVar
     {
-        std::string myName;
-        double myMax;
-        double myVal;
+        std::string myName;     // user name
+        double myMax;           // maximum allowed value
+        double myVal;           // value
 
         sVar( const std::string& name, double max );
     };
-    std::string sObjective;      // string objective function
-    std::vector<int> pObjective; // parsed Objective function
-    std::vector<sVar> vVars;     // input variables
-    std::vector<std::pair<std::string, double>> vConsts;
-    int myVariableMax;
+
+    std::string sObjective;      // string specifying objective function
+    productSum_t pObjective;     // parsed Objective function
+    std::vector<sVar> vVars;     // string specifying variables
+    std::vector<std::pair<std::string, double>> vConsts;    // string specifying constant
+    //int myVariableMax;
 
 
-    std::vector<std::string> vsConstraint; // constraint string specifiers
-    std::vector<sConstraint> pConstraint;
+    std::vector<std::string> vsConstraint; // strings specifying constraints
+    std::vector<sConstraint> pConstraint;  // parsed constraints
 
     std::vector<sVar> vTestVars;    // test variable values
     std::vector<sVar> vOptVars;     // optimal variable values
-    double objectiveValue;
+    double objectiveValue;          // value of objective function
 
     /// @brief Parse the objective function string
     ///
@@ -112,7 +126,7 @@ private:
 
     void parseConstraints();
 
-    std::vector<int> parseProductSum(
+    productSum_t parseProductSum(
         const std::string &line,
         std::string &compare,
         double& value);
@@ -125,13 +139,13 @@ private:
 
     bool isFeasible();
 
+    double calcProductSum( const productSum_t& ps );
+
     /// @brief odometer style iteration through test values
     /// @param[in,out] test vector of test values
-    /// @param[in] max maximum test value
     /// @return true if more to come, false if iteration complete
 
     bool nextTestValues(
         std::vector<sVar> &test,
-        int max,
         int rez);
 };

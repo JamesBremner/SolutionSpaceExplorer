@@ -4,17 +4,16 @@
 #include "cRunWatch.h"
 #include "cSolutionSpaceExplorer.h"
 
-cSolutionSpaceExplorer::sVar::sVar( 
-    const std::string& name, double max )
-        : myName( name ),
-        myMax( max ),
-        myVal( 0 )
-        {
-
-        }
+cSolutionSpaceExplorer::sVar::sVar(
+    const std::string &name, double max)
+    : myName(name),
+      myMax(max),
+      myVal(0)
+{
+}
 
 cSolutionSpaceExplorer::cSolutionSpaceExplorer()
-    : myVariableMax(1)
+// : myVariableMax(1)
 {
 }
 
@@ -62,12 +61,14 @@ std::vector<std::string> tokenize(const std::string &line)
     return ret;
 }
 
-std::vector<int> cSolutionSpaceExplorer::parseProductSum(
+cSolutionSpaceExplorer::productSum_t
+cSolutionSpaceExplorer::parseProductSum(
     const std::string &line,
     std::string &compare,
     double &value)
 {
-    std::vector<int> ret;
+    productSum_t ret;
+    product_t product;
 
     bool fvalueExpected = false;
     auto itv = vVars.end();
@@ -90,15 +91,16 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
 
         case '+':
         case '\03':
-            ret.push_back(itc - vConsts.begin());
-            ret.push_back(itv - vVars.begin());
-            itc = vConsts.end();
+            ret.push_back(product);
+            product.first.clear();
+            product.second.clear();
             break;
 
         case '<':
-            ret.push_back(itc - vConsts.begin());
-            ret.push_back(itv - vVars.begin());
-            itc = vConsts.end();
+            ret.push_back(product);
+            product.first.clear();
+            product.second.clear();
+            
             compare = token;
             fvalueExpected = true;
             break;
@@ -123,11 +125,12 @@ std::vector<int> cSolutionSpaceExplorer::parseProductSum(
                 if (itc == vConsts.end())
                     throw std::runtime_error(
                         "unrecognized token " + token);
+                product.first.push_back(itc - vConsts.begin());
             }
             else
             {
                 // token is variable
-                itv = itvNow;
+                product.second.push_back(itvNow - vVars.begin());
             }
         }
         break;
@@ -181,7 +184,7 @@ void cSolutionSpaceExplorer::search()
 
     objectiveValue = 0;
     vTestVars = vVars;
-    while (nextTestValues(vTestVars, myVariableMax, 1))
+    while (nextTestValues(vTestVars, 1))
     {
         if (!isFeasible())
             continue;
@@ -194,17 +197,25 @@ void cSolutionSpaceExplorer::search()
         }
     }
 }
+double cSolutionSpaceExplorer::calcProductSum(const productSum_t &ps)
+{
+    double ret = 0;
+    for (int p = 0; p < ps.size(); p += 2)
+    {
+        double prod = 1;
+        for (int i : ps[p].first)
+            prod *= vConsts[i].second;
+        for (int i : ps[p].second)
+            prod *= vTestVars[i].myVal;
+        ret += prod;
+    }
+    return ret;
+}
+
 double cSolutionSpaceExplorer::calcObjective()
 {
     // raven::set::cRunWatch aWatcher("calcObjective");
-    double ret = 0;
-    for (int p = 0; p < pObjective.size(); p += 2)
-    {
-        ret +=
-            vConsts[pObjective[p]].second *
-            vTestVars[pObjective[p + 1]].myVal;
-    }
-    return ret;
+    return calcProductSum(pObjective);
 }
 
 bool cSolutionSpaceExplorer::isFeasible()
@@ -212,16 +223,8 @@ bool cSolutionSpaceExplorer::isFeasible()
     // raven::set::cRunWatch aWatcher("isFeasible");
     for (auto &C : pConstraint)
     {
-        double v = 0;
-        int *p = C.vParams.data();
-        for (int i = 0; i < C.vParams.size(); i += 2)
-        {
-            v +=
-                vConsts[*p].second *
-                vTestVars[*(p + 1)].myVal;
-            p++;
-            p++;
-        }
+        double v = calcProductSum(C.vParams);
+
         switch (C.compare)
         {
         case eCompare::le:
@@ -239,7 +242,6 @@ bool cSolutionSpaceExplorer::isFeasible()
 
 bool cSolutionSpaceExplorer::nextTestValues(
     std::vector<sVar> &test,
-    int max,
     int rez)
 {
     // raven::set::cRunWatch aWatcher("nextTestValues");
@@ -259,7 +261,6 @@ bool cSolutionSpaceExplorer::nextTestValues(
             return false;
         }
     }
-
     return true;
 }
 
