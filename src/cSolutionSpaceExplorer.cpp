@@ -196,10 +196,27 @@ void cSolutionSpaceExplorer::search()
         }
     }
 }
+
+void cSolutionSpaceExplorer::searchHiLoRez()
+{
+    objectiveValue = 0;
+    vTestVars = vVars;
+    while (nextTestValues(vTestVars, 0))
+    {
+        if (!isFeasible())
+            continue;
+        double o = calcObjective();
+        if (o > objectiveValue)
+        {
+            objectiveValue = o;
+            vOptVars = vTestVars;
+        }
+    }
+}
 double cSolutionSpaceExplorer::calcProductSum(const productSum_t &ps)
 {
     double ret = 0;
-    for (int p = 0; p < ps.size(); p += 2)
+    for (int p = 0; p < ps.size(); p++)
     {
         double prod = 1;
         for (int i : ps[p].first)
@@ -247,9 +264,18 @@ bool cSolutionSpaceExplorer::nextTestValues(
     int k = 0;
     while (true)
     {
+        double max = test[k].myMax;
         double *p = &test[k].myVal;
-        *p += rez;
-        if (*p <= test[k].myMax)
+        if( rez == 1 )
+        (*p)++;
+        else {
+            int z = max / 5;
+            if( z < 1 )
+                (*p)++;
+            else
+                *p += z;
+        }
+        if (*p <= max)
             break;
         // cary over
         *p = 0;

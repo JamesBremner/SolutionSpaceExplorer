@@ -53,16 +53,16 @@ https://stackoverflow.com/q/79058180/16582
             ssex.variables(
                 {"apA", "apB", "apC", "apD",
                  "bpA", "bpB", "bpC", "bpD"},
-                10);
+                20);
 
             // crate budgets
-            ssex.constraint("apA + bpA <= 10");
-            ssex.constraint("apB + bpB <= 10");
-            ssex.constraint("apC + bpC <= 10");
-            ssex.constraint("apD + bpD <= 10");
+            ssex.constraint("apA + bpA <= 20");
+            ssex.constraint("apB + bpB <= 20");
+            ssex.constraint("apC + bpC <= 20");
+            ssex.constraint("apD + bpD <= 20");
 
             // pay limit
-            ssex.constraint("apA + apB + apC + apD < 15");
+            ssex.constraint("apA + apB + apC + apD < 35");
 
             // crate limit
             ssex.constraint("aaA + aaB + aaC + aaD < 2");
@@ -79,7 +79,7 @@ https://stackoverflow.com/q/79058180/16582
 
         ssex.parse();
 
-        ssex.search();
+        ssex.searchHiLoRez();
 
         for (auto &p : ssex.optVarNameValue())
             std::cout << p.first << ": " << p.second << " ";

@@ -54,6 +54,8 @@ public:
 
     void search();
 
+    void searchHiLoRez();
+
     //////// Results /////////////////////////
 
     double objective() const
